@@ -26,9 +26,9 @@ function App() {
   }, [cleanup]);
 
   return (
-    <main className="relative w-full h-screen overflow-hidden bg-zinc-950 font-sans">
-      {/* 3D Canvas behind the UI */}
-      <div className={`absolute inset-0 transition-opacity duration-1000 ${phase === 'active' || phase === 'connecting' || phase === 'disconnected' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+    <main className="relative w-full min-h-screen overflow-y-auto bg-zinc-950 font-sans">
+      {/* 3D Canvas fixed behind the UI */}
+      <div className={`fixed inset-0 transition-opacity duration-1000 ${phase === 'active' || phase === 'connecting' || phase === 'disconnected' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
         <TunnelCanvas 
           speed={transferState.speed} 
           progress={transferState.progress} 
