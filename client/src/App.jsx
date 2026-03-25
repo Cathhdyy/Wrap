@@ -53,6 +53,7 @@ function App() {
               roomId={roomId}
               transferState={transferState}
               phase={phase}
+              cleanup={cleanup}
             />
           </motion.div>
         )}

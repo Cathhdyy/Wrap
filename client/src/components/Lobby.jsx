@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UploadCloud, Zap, Network, KeyRound, Copy, Check, ChevronRight } from 'lucide-react';
 
-const Lobby = ({ createRoom, joinRoom, sendFile, roomId, transferState, phase }) => {
+const Lobby = ({ createRoom, joinRoom, sendFile, roomId, transferState, phase, cleanup }) => {
   const [inputRoomId, setInputRoomId] = useState('');
   const [copied, setCopied] = useState(false);
 
