@@ -23,12 +23,15 @@ export const useWebRTC = () => {
   const metadataRef = useRef(null);
   const startTimeRef = useRef(null);
 
+  const roomIdRef = useRef(null);
+
   const cleanup = useCallback(() => {
     if (dcRef.current) dcRef.current.close();
     if (pcRef.current) pcRef.current.close();
     if (socketRef.current) socketRef.current.disconnect();
     chunksRef.current = [];
     setPhase('disconnected');
+    roomIdRef.current = null;
   }, []);
 
   useEffect(() => {
@@ -36,11 +39,13 @@ export const useWebRTC = () => {
 
     socketRef.current.on('room-created', (id) => {
       setRoomId(id);
+      roomIdRef.current = id;
       setTransferState(prev => ({ ...prev, isSender: true }));
     });
 
     socketRef.current.on('room-joined', (id) => {
       setRoomId(id);
+      roomIdRef.current = id;
       setTransferState(prev => ({ ...prev, isSender: false }));
       setPhase('connecting');
     });
@@ -67,6 +72,9 @@ export const useWebRTC = () => {
       pcRef.current = pc;
 
       await pc.setRemoteDescription(new RTCSessionDescription(offer));
+      // Process any ICE candidates that arrived before the offer
+      if (pc.processBufferedIce) await pc.processBufferedIce();
+      
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
       socketRef.current.emit('answer', { to: from, answer });
@@ -74,12 +82,18 @@ export const useWebRTC = () => {
 
     socketRef.current.on('answer', async ({ from, answer }) => {
       console.log('Received answer...');
+      if (!pcRef.current) return;
       await pcRef.current.setRemoteDescription(new RTCSessionDescription(answer));
+      if (pcRef.current.processBufferedIce) await pcRef.current.processBufferedIce();
     });
 
     socketRef.current.on('ice-candidate', async ({ from, candidate }) => {
-      if (candidate) {
-        await pcRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+      if (candidate && pcRef.current) {
+        if (pcRef.current.bufferedIceCandidate) {
+          await pcRef.current.bufferedIceCandidate(candidate);
+        } else {
+          await pcRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+        }
       }
     });
 
@@ -91,9 +105,17 @@ export const useWebRTC = () => {
       iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
     });
 
+    const iceQueue = [];
     pc.onicecandidate = (event) => {
       if (event.candidate) {
         socketRef.current.emit('ice-candidate', { to: peerId, candidate: event.candidate });
+      }
+    };
+
+    pc.oniceconnectionstatechange = () => {
+      console.log('ICE state:', pc.iceConnectionState);
+      if (pc.iceConnectionState === 'failed') {
+        pc.restartIce();
       }
     };
 
@@ -103,15 +125,39 @@ export const useWebRTC = () => {
       dcRef.current = event.channel;
     };
 
+    // Buffer ICE candidates until remote description is set
+    pc.bufferedIceCandidate = async (candidate) => {
+      if (pc.remoteDescription && pc.remoteDescription.type) {
+        try {
+          await pc.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch (e) {
+          console.error('Error adding ice candidate', e);
+        }
+      } else {
+        iceQueue.push(candidate);
+      }
+    };
+
+    pc.processBufferedIce = async () => {
+      while (iceQueue.length > 0) {
+        const candidate = iceQueue.shift();
+        try {
+          await pc.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch (e) {
+          console.error('Error adding buffered ice candidate', e);
+        }
+      }
+    };
+
     return pc;
   };
 
   const setupDataChannel = (dc) => {
     dc.onopen = () => {
-      console.log('DataChannel open');
+      console.log('DataChannel open! Room:', roomIdRef.current);
       setPhase('active');
       dc.bufferedAmountLowThreshold = 64 * 1024; // 64KB threshold
-      socketRef.current.emit('connection-established', roomId);
+      socketRef.current.emit('connection-established', roomIdRef.current);
     };
 
     dc.onclose = () => {

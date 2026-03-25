@@ -37,7 +37,7 @@ function App() {
       </div>
 
       <AnimatePresence mode="wait">
-        {phase !== 'active' && (
+        {!(phase === 'active' && transferState.progress > 0) && (
           <motion.div 
             key="lobby"
             initial={{ opacity: 0, scale: 0.95 }}

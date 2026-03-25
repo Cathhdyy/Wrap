@@ -109,7 +109,31 @@ const Lobby = ({ createRoom, joinRoom, sendFile, roomId, transferState, phase })
               </h2>
               
               <AnimatePresence mode="wait">
-                {phase === 'connecting' ? (
+                {phase === 'active' ? (
+                  <motion.div 
+                    key="active" 
+                    initial={{ opacity: 0, scale: 0.95 }} 
+                    animate={{ opacity: 1, scale: 1 }} 
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="space-y-4"
+                  >
+                    <div className="flex items-center justify-between mb-4">
+                      <p className="text-[10px] md:text-xs text-emerald-400 font-bold uppercase tracking-widest flex items-center gap-2">
+                        <Check className="w-4 h-4" /> Ready to Warp
+                      </p>
+                      <button 
+                         onClick={cleanup}
+                         className="text-[10px] text-zinc-500 hover:text-red-400 transition-colors uppercase font-bold tracking-widest"
+                      >
+                        Disconnect
+                      </button>
+                    </div>
+                    <div className="h-20 md:h-24 w-full bg-emerald-500/10 rounded-xl border border-emerald-500/30 flex flex-col items-center justify-center p-4">
+                       <p className="text-xs text-zinc-400 text-center mb-2">P2P Link established. Select a file on the left to begin transmission.</p>
+                       <div className="w-12 h-1 bg-emerald-500/30 rounded-full" />
+                    </div>
+                  </motion.div>
+                ) : phase === 'connecting' ? (
                   <motion.div 
                     key="connecting" 
                     initial={{ opacity: 0, scale: 0.95 }} 
