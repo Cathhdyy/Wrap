@@ -109,11 +109,33 @@ const Lobby = ({ createRoom, joinRoom, sendFile, roomId, transferState, phase })
               </h2>
               
               <AnimatePresence mode="wait">
-                {!roomId ? (
+                {phase === 'connecting' ? (
+                  <motion.div 
+                    key="connecting" 
+                    initial={{ opacity: 0, scale: 0.95 }} 
+                    animate={{ opacity: 1, scale: 1 }} 
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    className="space-y-4"
+                  >
+                    <p className="text-[10px] md:text-xs text-emerald-400 font-bold uppercase tracking-widest animate-pulse">Establishing P2P Tunnel...</p>
+                    <div className="relative h-20 md:h-24 w-full bg-emerald-500/5 rounded-xl border border-emerald-500/30 overflow-hidden flex items-center justify-center">
+                      <motion.div 
+                        animate={{ 
+                          scale: [1, 1.2, 1],
+                          opacity: [0.1, 0.3, 0.1]
+                        }}
+                        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                        className="absolute inset-0 bg-emerald-500 rounded-full blur-3xl"
+                      />
+                      <Zap className="w-8 h-8 md:w-10 md:h-10 text-emerald-400 animate-bounce" />
+                    </div>
+                  </motion.div>
+                ) : !roomId ? (
                   <motion.div key="create" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}>
                     <button
                       onClick={createRoom}
-                      className="w-full py-3 md:py-3.5 rounded-xl bg-white text-black font-bold text-xs md:text-sm tracking-widest uppercase hover:bg-zinc-200 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_30px_rgba(255,255,255,0.2)]"
+                      disabled={phase === 'connecting'}
+                      className="w-full py-3 md:py-3.5 rounded-xl bg-white text-black font-bold text-xs md:text-sm tracking-widest uppercase hover:bg-zinc-200 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Generate Room
                     </button>
